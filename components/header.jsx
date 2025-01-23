@@ -5,9 +5,10 @@ import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import UserMenu from "./user-menu";
 import { PenBox } from "lucide-react";
 import Image from "next/image";
+import checkUser from "@/lib/checkUser";
 
 async function Header() {
-
+  await checkUser();
   return (
     <header className="container mx-auto">
       <nav className="py-6 px-4 flex justify-between items-center">
