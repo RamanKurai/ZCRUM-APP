@@ -6,7 +6,6 @@ import UserMenu from "./user-menu";
 import { PenBox } from "lucide-react";
 import Image from "next/image";
 import checkUser from "@/lib/checkUser";
-import Userloading from "./user-loading";
 
 async function Header() {
   await checkUser();
