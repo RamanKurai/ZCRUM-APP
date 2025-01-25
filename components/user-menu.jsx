@@ -1,10 +1,10 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
+import { ClerkProvider, UserButton } from "@clerk/nextjs";
 import { ChartNoAxesGantt } from "lucide-react";
 
 const UserMenu = () => {
-  return (
+  return (<ClerkProvider>
     <UserButton
       appearance={{
         elements: {
@@ -21,6 +21,7 @@ const UserMenu = () => {
         <UserButton.Action label="manageAccount" />
       </UserButton.MenuItems>
     </UserButton>
+    </ClerkProvider>
   );
 };
 
