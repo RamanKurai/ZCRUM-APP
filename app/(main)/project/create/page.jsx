@@ -13,6 +13,7 @@ import { projectSchema } from "@/app/lib/validators";
 import { createProject } from "@/actions/projects";
 import { BarLoader } from "react-spinners";
 import OrgSwitcher from "@/components/org-switcher";
+import { toast } from "sonner";
 
 export default function CreateProjectPage() {
   const router = useRouter();
@@ -51,7 +52,8 @@ export default function CreateProjectPage() {
   };
 
   useEffect(() => {
-    if (project) router.push(`/project/${project.id}`);
+    if (project?.id) toast.success("Project Created Sucessfully");
+    router.push(`/project/${project.id}`);
   }, [loading]);
 
   if (!isOrgLoaded || !isUserLoaded) {
