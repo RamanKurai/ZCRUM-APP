@@ -52,8 +52,11 @@ export default function CreateProjectPage() {
   };
 
   useEffect(() => {
-    if (project?.id) toast.success("Project Created Sucessfully");
-    router.push(`/project/${project.id}`);
+    console.log("Project object:", project);
+    if (project?.id) {
+      toast.success("Project Created Sucessfully");
+      router.push(`/project/${project.id}`);
+    }
   }, [loading]);
 
   if (!isOrgLoaded || !isUserLoaded) {
