@@ -96,7 +96,7 @@ export async function getProject(projectId) {
   }
 
   // Find user to verify existence
-  const user = await db.user.findUnique({
+  const user = await db?.user.findUnique({
     where: { clerkUserId: userId },
   });
 
