@@ -57,4 +57,28 @@ export async function createIssue(projectId, data) {
   
     return issues;
   }
+
+  export async function updateIssueOrder(updatedIssues) {
+    const { userId, orgId } = await auth();
+  
+    if (!userId || !orgId) {
+      throw new Error("Unauthorized");
+    }
+  
+    // Start a transaction
+    await db?.$transaction(async (prisma) => {
+      // Update each issue
+      for (const issue of updatedIssues) {
+        await prisma.issue.update({
+          where: { id: issue.id },
+          data: {
+            status: issue.status,
+            order: issue.order,
+          },
+        });
+      }
+    });
+  
+    return { success: true };
+  }
   

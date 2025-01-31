@@ -6,10 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import statuses from "@/data/status";
 import IssueCreationDrawer from "./create-issue";
-import { getIssuesForSprint } from "@/actions/issues";
+import { getIssuesForSprint, updateIssueOrder } from "@/actions/issues";
 import useFetch from "@/hooks/use-fetch";
 import IssueCard from "@/components/issues-card";
+import { BarLoader } from "react-spinners";
 
+
+const  reorder =(list, startIndex, endIndex)=> {
+  const result = Array.from(list);
+  const [removed] = result.splice(startIndex, 1);
+  result.splice(endIndex, 0, removed);
+
+  return result;
+}
+    
 const SprintBoard = ({ sprints, orgId, projectId }) => {
   const [currentSprint, setCurrentSprint] = useState(
     sprints.find((spr) => spr.status === "ACTIVE") || sprints[0]
@@ -20,7 +30,7 @@ const SprintBoard = ({ sprints, orgId, projectId }) => {
 
   const onDragEnd = async (result) => {
     if (!result.destination) return;
-    
+
     if (currentSprint.status === "PLANNED") {
       toast.warning("Start the sprint to update board");
       return;
@@ -29,8 +39,64 @@ const SprintBoard = ({ sprints, orgId, projectId }) => {
       toast.warning("Cannot update board after sprint end");
       return;
     }
-
     // Handle drag logic here (e.g., update issue status in backend)
+    const { destination, source } = result;
+
+    if (!destination) {
+      return;
+    }
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+    const newOrderedData = [...issues];
+
+    // source and destination list
+    const sourceList = newOrderedData.filter(
+      (list) => list.status === source.droppableId
+    );
+
+    const destinationList = newOrderedData.filter(
+      (list) => list.status === destination.droppableId
+    );
+
+    if (source.droppableId === destination.droppableId) {
+      const reorderedCards = reorder(
+        sourceList,
+        source.index,
+        destination.index
+      );
+
+      reorderedCards.forEach((card, i) => {
+        card.order = i;
+      });
+    } else {
+      // remove card from the source list
+      const [movedCard] = sourceList.splice(source.index, 1);
+
+      // assign the new list id to the moved card
+      movedCard.status = destination.droppableId;
+
+      // add new card to the destination list
+      destinationList.splice(destination.index, 0, movedCard);
+
+      sourceList.forEach((card, i) => {
+        card.order = i;
+      });
+
+      // update the order for each card in destination list
+      destinationList.forEach((card, i) => {
+        card.order = i;
+      });
+    }
+
+    const sortedIssues = newOrderedData.sort((a, b) => a.order - b.order);
+    setIssues(newOrderedData, sortedIssues);
+
+    updateIssueOrder(sortedIssues);
   };
 
   const handleAddIssue = (status) => {
@@ -65,6 +131,11 @@ const SprintBoard = ({ sprints, orgId, projectId }) => {
           sprints={sprints}
           projectId={projectId}
         />
+
+        
+        {(issuesLoading) && (
+          <BarLoader className="mt-4" width={"100%"} color="#36d7b7" />
+        )}
 
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 bg-slate-900 p-4 rounded-lg">
