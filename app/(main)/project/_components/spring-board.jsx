@@ -1,11 +1,14 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SprintManager from "./sprint-manager";
-import { DragDropContext, Droppable } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import statuses from "@/data/status";
 import IssueCreationDrawer from "./create-issue";
+import { getIssuesForSprint } from "@/actions/issues";
+import useFetch from "@/hooks/use-fetch";
+import IssueCard from "@/components/issues-card";
 
 const SprintBoard = ({ sprints, orgId, projectId }) => {
   const [currentSprint, setCurrentSprint] = useState(
@@ -15,16 +18,44 @@ const SprintBoard = ({ sprints, orgId, projectId }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
 
-  const onDragEnd = () => {};
+  const onDragEnd = async (result) => {
+    if (!result.destination) return;
+    
+    if (currentSprint.status === "PLANNED") {
+      toast.warning("Start the sprint to update board");
+      return;
+    }
+    if (currentSprint.status === "COMPLETED") {
+      toast.warning("Cannot update board after sprint end");
+      return;
+    }
 
-  const handleAddIssue =(status)=>{
-   setSelectedStatus(status);
-   setIsDrawerOpen(true);
+    // Handle drag logic here (e.g., update issue status in backend)
+  };
+
+  const handleAddIssue = (status) => {
+    setSelectedStatus(status);
+    setIsDrawerOpen(true);
+  };
+
+  const {
+    loading: issuesLoading,
+    error: issuesError,
+    fn: fetchIssues,
+    data: issues,
+    setData: setIssues,
+  } = useFetch(getIssuesForSprint);
+
+  useEffect(() => {
+    if (currentSprint.id) {
+      fetchIssues(currentSprint.id);
+    }
+  }, [currentSprint.id]);
+
+  if (issuesError) {
+    return <div>Error Loading Issues</div>;
   }
 
-  const handleIssueCreated=()=>{
-    // fetch issues again
-  }
   return (
     <>
       <div>
@@ -34,44 +65,80 @@ const SprintBoard = ({ sprints, orgId, projectId }) => {
           sprints={sprints}
           projectId={projectId}
         />
-       <DragDropContext onDragEnd={onDragEnd}>
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 bg-slate-900 p-4 rounded-lg">
-    {statuses.map((column) => (
-      <Droppable key={column.key} droppableId={column.key}>
-        {(provided) => (
-          <div
-            {...provided.droppableProps}
-            ref={provided.innerRef}
-            className="space-y-2"
-          >
-            <h3 className="font-semibold mb-2 text-center">{column.name}</h3>
 
-            {/* Issues */}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 bg-slate-900 p-4 rounded-lg">
+            {statuses.map((column) => (
+              <Droppable key={column.key} droppableId={column.key}>
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-2"
+                  >
+                    <h3 className="font-semibold mb-2 text-center">
+                      {column.name}
+                    </h3>
 
-            {provided.placeholder}
-            {column.key === "TODO" && currentSprint.status !== "COMPLETED" && (
-              <Button variant="ghost" className="w-full"
-              onClick={()=> handleAddIssue(column.key)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Issue
-              </Button>
-            )}
+                    {issues
+                      ?.filter((issue) => issue.status === column.key)
+                      .map((issue, index) => (
+                        <Draggable
+                          key={issue.id}
+                          draggableId={issue.id}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <IssueCard
+                                issue={issue}
+                                onDelete={() => fetchIssues(currentSprint.id)}
+                                onUpdate={(updated) =>
+                                  setIssues((prevIssues) =>
+                                    prevIssues.map((i) =>
+                                      i.id === updated.id ? updated : i
+                                    )
+                                  )
+                                }
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+
+                    {provided.placeholder}
+
+                    {column.key === "TODO" &&
+                      currentSprint.status !== "COMPLETED" && (
+                        <Button
+                          variant="ghost"
+                          className="w-full"
+                          onClick={() => handleAddIssue(column.key)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Create Issue
+                        </Button>
+                      )}
+                  </div>
+                )}
+              </Droppable>
+            ))}
           </div>
-        )}
-      </Droppable>
-    ))}
-  </div>
-</DragDropContext>
+        </DragDropContext>
 
-
-  <IssueCreationDrawer
-  isOpen={isDrawerOpen}
-  onClose={() => setIsDrawerOpen(false)}
-  sprintId={currentSprint.id}
-  status={selectedStatus}
-  projectId={projectId}
-  onIssueCreated={handleIssueCreated}
-  orgId={orgId}/>
+        <IssueCreationDrawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          sprintId={currentSprint.id}
+          status={selectedStatus}
+          projectId={projectId}
+          onIssueCreated={() => fetchIssues(currentSprint.id)}
+          orgId={orgId}
+        />
       </div>
     </>
   );
