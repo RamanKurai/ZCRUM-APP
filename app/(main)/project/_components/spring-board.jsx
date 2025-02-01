@@ -10,6 +10,7 @@ import { getIssuesForSprint, updateIssueOrder } from "@/actions/issues";
 import useFetch from "@/hooks/use-fetch";
 import IssueCard from "@/components/issues-card";
 import { BarLoader } from "react-spinners";
+import { toast } from "sonner";
 
 
 const  reorder =(list, startIndex, endIndex)=> {
@@ -158,6 +159,7 @@ const SprintBoard = ({ sprints, orgId, projectId }) => {
                           key={issue.id}
                           draggableId={issue.id}
                           index={index}
+                          isDragDisabled={issuesLoading}
                         >
                           {(provided) => (
                             <div
