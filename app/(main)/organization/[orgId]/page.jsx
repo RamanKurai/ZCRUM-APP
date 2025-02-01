@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import React from 'react'
 import ProjectList from './_components/project-list';
+import UserIssues from './_components/user-issues';
 
 const OrganizationPage = async ({params}) => {
     const {orgId} = await params;
@@ -31,7 +32,7 @@ const OrganizationPage = async ({params}) => {
         <ProjectList orgId={organization.id} />
       </div>
       <div className="mt-8">
-        {/* <UserIssues userId={userId} /> */}
+        <UserIssues userId={userId} />
       </div>
     </div>
   );
