@@ -95,7 +95,6 @@ export default function SprintCreationForm({
                 <Input
                   id="name"
                   {...register("name")}
-                  readOnly
                   className="bg-slate-950"
                 />
                 {errors.name && (
